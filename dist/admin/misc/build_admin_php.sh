@@ -11,12 +11,12 @@ BASE_DIR=`dirname $LSINSTALL_DIR`
 LSWS_HOME=`dirname $BASE_DIR`
 
 PATH=$PATH
-PHP_VERSION=5.3.29
+PHP_VERSION=5.5.23
 PHP_BUILD_DIR=$LSWS_HOME/phpbuild
 mkdir ${PHP_BUILD_DIR}
 LOG_FILE=${PHP_BUILD_DIR}/adminphp.log
 DL_METHOD="curl -L -o"
-LSAPI_VERSION=6.6
+LSAPI_VERSION=6.7
 PHP_CONF_OPTIONS="--prefix=/tmp --disable-all --with-litespeed --enable-session --enable-posix --enable-xml --with-libexpat-dir=/usr --with-zlib --enable-sockets --enable-bcmath --enable-json"
 
 PLF=`uname -p`

@@ -17,7 +17,7 @@ class UserSettings
     var $Time_Format = " d-M-Y H:i ";
     var $Time_Zone = 'UTC';
     var $IconPath = "/_autoindex/icons";
-    var $nameWidth = 35;
+    var $nameWidth = 48;
     var $nameFormat;
     
     function UserSettings()

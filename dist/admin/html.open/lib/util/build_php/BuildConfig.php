@@ -33,11 +33,11 @@ class BuildConfig
 
 			case self::SUHOSIN_VERSION: return '0.9.37.1';
 
-			case self::APC_VERSION:	return '3.1.9';
+			case self::APC_VERSION:	return '3.1.13';
 
 			case self::XCACHE_VERSION: return '3.2.0';
 
-			case self::MEMCACHE_VERSION: return '2.2.7';
+			case self::MEMCACHE_VERSION: return '3.0.8';
 
 			//('MEMCACHED_VERSION', '1.0.2');
 

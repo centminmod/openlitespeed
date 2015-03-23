@@ -653,7 +653,7 @@ class BuildTool
 		$ver = 'APC-' . BuildConfig::GetVersion(BuildConfig::APC_VERSION);
 		$ext['{EXTENSION_DIR}'] = $ver;
 		$ext['{EXTENSION_SRC}'] = $ver . '.tgz';
-		$ext['{EXTENSION_DOWNLOAD_URL}'] = 'http://pecl.php.net/get/'. $ver . '.tgz';
+		$ext['{EXTENSION_DOWNLOAD_URL}'] = 'http://centminmod.com/centminmodparts/apc/php550/'. $ver . '.tgz';
 		$ext['{EXTRACT_METHOD}'] = 'tar -zxf';
 		$ext['{EXTENSION_EXTRA_CONFIG}'] = '--enable-apc';
 
