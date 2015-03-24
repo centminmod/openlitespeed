@@ -24,6 +24,16 @@ if [ "x$PLF" = "xx86_64" ] ; then
     PHP_CONF_OPTIONS="${PHP_CONF_OPTIONS} --with-libdir=lib64"
 fi
 
+if [ -f /proc/user_beancounters ]; then
+    CPUS=`cat "/proc/cpuinfo" | grep "processor"|wc -l`
+    CPUS=$(echo $CPUS+1 | bc)
+    MAKETHREADS=" -j$CPUS"
+else
+    CPUS=`cat "/proc/cpuinfo" | grep "processor"|wc -l`
+    CPUS=$(echo $CPUS+1 | bc)
+    MAKETHREADS=" -j$CPUS"
+fi
+
 check_errs()
 {
   if [ "${1}" -ne "0" ] ; then
@@ -224,7 +234,7 @@ rm /tmp/php-1.tar.$$ /tmp/php-1.lst.$$
 
 main_msg "Compiling PHP (5-10 minutes)" 
 echo `date`
-make
+make${MAKETHREADS}
 check_errs $? "Could not compile PHP"
 
 main_msg "copy compiled php binary to litespeed directory"
