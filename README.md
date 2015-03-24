@@ -1,6 +1,13 @@
 OpenLiteSpeed Web Server
 ========
 
+CentminMod.com Fork
+--------
+
+Separate branch for customisations made for CentminMod.com integration
+
+    git clone --depth 1 https://github.com/centminmod/openlitespeed.git -b centminmod_v1
+
 Description
 --------
 
