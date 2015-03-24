@@ -1088,7 +1088,7 @@ gen_selfsigned_cert()
     cert="${SSL_HOSTNAME}.crt"
 
 # Create the certificate signing request
-    openssl req -new -passin pass:password -passout pass:password -out $csr <<EOF
+    openssl req -new -sha256 -passin pass:password -passout pass:password -out $csr <<EOF
 ${SSL_COUNTRY}
 ${SSL_STATE}
 ${SSL_LOCALITY}
@@ -1109,7 +1109,7 @@ EOF
 
 # Create the Certificate
 
-    openssl x509 -in ${csr} -out ${cert} -req -signkey ${key} -days 1000
+    openssl x509 -in ${csr} -out ${cert} -req -signkey ${key} -days 1500
 }
 
 
