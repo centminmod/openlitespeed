@@ -63,8 +63,8 @@ AC_SUBST([OPENLSWS_ADMIN])
 
 ## ##Set option --with-password
 AC_ARG_WITH([password],
-            AS_HELP_STRING([--with-password],[Set password of administrator [default: 123456]]),
-            [OPENLSWS_PASSWORD="$withval"], [OPENLSWS_PASSWORD=123456])
+            AS_HELP_STRING([--with-password],[Set password of administrator [default: 9876543123]]),
+            [OPENLSWS_PASSWORD="$withval"], [OPENLSWS_PASSWORD=9876543123])
 AC_SUBST([OPENLSWS_PASSWORD])
 
 ## ##Set option --with-email

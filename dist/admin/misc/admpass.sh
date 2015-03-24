@@ -16,7 +16,7 @@ EOF
 printf "%s" "User name [admin]: "
 read ADMIN_USER
 if [ "x$ADMIN_USER" = "x" ]; then
-	ADMIN_USER=admin
+	ADMIN_USER=user1_admin
 fi
 
 cat <<EOF
