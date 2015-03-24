@@ -1109,7 +1109,7 @@ EOF
 
 # Create the Certificate
 
-    openssl x509 -in ${csr} -out ${cert} -req -signkey ${key} -days 1500
+    openssl x509 -sha256 -in ${csr} -out ${cert} -req -signkey ${key} -days 1500
 }
 
 
