@@ -60,15 +60,18 @@ typedef struct
 #define LSSHM_MAX_BUCKET_SLOT   0x4 // max bucket slot allocation
 #endif
 
+#define LSSHM_POOL_MAXBCKTSIZE  (LSSHM_POOL_NUMBUCKET * LSSHM_POOL_BCKTINCR)
+
 typedef struct
 {
-    LsShmSize_t     m_iShmAllocated;    // total direct shm allocated (bytes)
-    LsShmSize_t     m_iShmReleased;     // total direct shm released (bytes)
-    LsShmSize_t     m_iFromChunk;       // allocated for pool (bytes)
+    LsShmSize_t     m_iShmAllocated;    // total direct shm allocated (blocks)
+    LsShmSize_t     m_iShmReleased;     // total direct shm released (blocks)
+    LsShmSize_t     m_iPoolInUse;       // currently allocated from pool (bytes)
+    LsShmSize_t     m_iFreeChunk;       // chunk to be allocated (bytes)
     LsShmSize_t     m_iFlAllocated;     // allocated from free list (bytes)
     LsShmSize_t     m_iFlReleased;      // released to free list (bytes)
-    LsShmSize_t     m_iFlCnt;           // entries on free list
-    struct
+    LsShmSize_t     m_iFlCnt;           // entries on free list (count)
+    struct bcktstat
     {
         LsShmSize_t m_iBkAllocated;     // total allocations from bucket (count)
         LsShmSize_t m_iBkReleased;      // total releases to bucket (count)
@@ -77,13 +80,10 @@ typedef struct
 
 typedef struct
 {
-    LsShmSize_t     x_iUnitSize;
-    LsShmSize_t     x_iMaxUnitSize;
-    LsShmSize_t     x_iNumFreeBucket;
-    ShmMapChunk     x_chunk;             // unused after alloc2
-    LsShmOffset_t   x_iFreeList;         // the big free list
+    ShmMapChunk     x_chunk;            // unused after alloc2
+    LsShmOffset_t   x_iFreeList;        // the big free list
     LsShmOffset_t   x_aFreeBucket[LSSHM_POOL_NUMBUCKET];
-    LsShmPoolMapStat    x_stat;          // map statistics
+    LsShmPoolMapStat    x_stat;         // map statistics
 } LsShmPoolMap;
 
 typedef struct
@@ -112,7 +112,7 @@ public:
     void destroyShm();
 
     uint32_t getMagic() const   {   return m_iMagic;    }
-    LsShm *getShm() const       {   return m_pShm;      }
+    ls_attr_inline LsShm *getShm() const       {   return m_pShm;      }
 
     const char *name() const
     {   return (const char *)getPool()->x_aName; };
@@ -125,6 +125,32 @@ public:
 
     ls_attr_inline LsShmOffset_t ptr2offset(const void *ptr) const
     {   return m_pShm->ptr2offset(ptr); }
+
+    ls_attr_inline LsShmStatus_t chkRemap()
+    {   return m_pShm->chkRemap(); }
+
+    ls_attr_inline LsShmSize_t roundDataSize(LsShmSize_t size) const
+    {
+        return ((size + (LSSHM_POOL_UNITSIZE-1))
+                / LSSHM_POOL_UNITSIZE) * LSSHM_POOL_UNITSIZE;
+    };
+    
+    ls_attr_inline LsShmSize_t roundPageSize(LsShmSize_t size) const
+    {
+        return ((size + (LSSHM_SHM_UNITSIZE-1))
+                / LSSHM_SHM_UNITSIZE) * LSSHM_SHM_UNITSIZE;
+    };
+
+    ls_attr_inline LsShmSize_t size2roundSize(LsShmSize_t size) const
+    {
+        return ((size >= LSSHM_SHM_UNITSIZE) ?
+            roundPageSize(size) : roundDataSize(size));
+    }
+
+    ls_attr_inline LsShmSize_t roundSize2pages(LsShmSize_t size) const
+    {
+        return ((size + (LSSHM_SHM_UNITSIZE-1)) / LSSHM_SHM_UNITSIZE);
+    };
 
     LsShmOffset_t  alloc2(LsShmSize_t size, int &remapped);
     void  release2(LsShmOffset_t offset, LsShmSize_t size);
@@ -158,7 +184,7 @@ public:
     {   return m_pShm->oldMaxSize(); }
 
     LsShmOffset_t getPoolMapStatOffset() const
-    { return (LsShmOffset_t)(long)&((LsShmPoolMem *)m_iOffset)->x_data.x_stat; }
+    { return (LsShmOffset_t)(long)&((LsShmPoolMem *)(long)m_iOffset)->x_data.x_stat; }
 
     LsShmLock *lockPool()
     {   return m_pShm->lockPool(); }
@@ -172,10 +198,11 @@ public:
     {   return m_pShm->getObjBase(); }
 
     int lock()
-    {   return m_iLockEnable && lsi_shmlock_lock(m_pShmLock); }
-
-    int trylock()
-    {   return m_iLockEnable && lsi_shmlock_trylock(m_pShmLock); }
+    {
+        if (m_iLockEnable == 0)
+            return 0;
+        return getShm()->lockRemap(m_pShmLock);
+    }
 
     int unlock()
     {   return m_iLockEnable && lsi_shmlock_unlock(m_pShmLock); }
@@ -194,7 +221,6 @@ private:
     int setupLock()
     {   return m_iLockEnable && lsi_shmlock_setup(m_pShmLock); }
 
-    void syncData();
     void mapLock();
 
     // for internal purpose
@@ -215,30 +241,8 @@ private:
     void mvDataFreeListToBucket(LsShmFreeList *pFree, LsShmOffset_t offset);
     void rmFromDataFreeList(LsShmFreeList *pFree);
 
-    // NOTE m_pageUnitSize and m_dataUnitSize are set only at start up
-#ifdef notdef
-    LsShmOffset_t pageSize2Bucket(LsShmSize_t size) const
-    {
-        return ((size + m_pageUnitSize - 1)
-                / m_pageUnitSize)
-               * m_pageUnitSize;
-    }
-#endif
-
-    LsShmSize_t roundPageSize(LsShmSize_t size) const
-    {
-        return ((size - 1 + m_iPageUnitSize)
-                / m_iPageUnitSize) * m_iPageUnitSize;
-    };
-
     LsShmOffset_t dataSize2Bucket(LsShmSize_t size) const
-    {   return (size / m_iDataUnitSize); }
-
-    LsShmSize_t roundDataSize(LsShmSize_t size) const
-    {
-        return ((size - 1 + m_iDataUnitSize)
-                / m_iDataUnitSize) * m_iDataUnitSize;
-    };
+    {   return (size / LSSHM_POOL_BCKTINCR); }
 
     void incrCheck(LsShmSize_t *ptr, LsShmSize_t size)
     {
@@ -263,8 +267,6 @@ private:
     int8_t              m_iLockEnable;
     int8_t              m_iShmOwner;    // indicated if I own the SHM
     uint16_t            m_iRegNum;      // registry number
-    LsShmSize_t         m_iPageUnitSize;
-    LsShmSize_t         m_iDataUnitSize;
     LsShmPool          *m_pParent;      // parent global pool
     int                 m_iRef;
 #ifdef LSSHM_DEBUG_ENABLE

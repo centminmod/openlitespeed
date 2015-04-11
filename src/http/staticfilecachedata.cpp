@@ -634,7 +634,7 @@ int StaticFileCacheData::compressFile()
         pData = m_fileData.getCacheData(offset, wanted, achBuf, len);
         if (wanted <= 0)
             return LS_FAIL;
-        if (gzBuf.write(pData, wanted))
+        if (gzBuf.write(pData, wanted) == LS_FAIL)
             return LS_FAIL;
         offset += wanted;
 
@@ -776,7 +776,7 @@ int StaticFileCacheData::readyCacheData(
 {
     char *pFileName = m_real.buf();
     int ret;
-    if ((compress) && (m_pMimeType->getExpires()->compressable()))
+    if ((compress) && (m_pMimeType->getExpires()->compressible()))
     {
         ret = readyGziped();
         if (ret == 0)
